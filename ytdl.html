@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Enter the link you want to downlaod the mp3 of!</title>
+</head>
+<body>
+    
+<form>
+    <div>
+        <label id="frag">add the iwn !!!!!!</label>
+        <input type="text" id="item" autofocus>
+    </div>
+    <button id='dlBtn' onclick="dl()">dl</button>
+</form>
+
+
+<script>
+    const electron = require('electron')
+    const {ipcRenderer} = electron
+
+    function dl(){
+        var item = document.getElementById('item').value
+        document.getElementById('frag').innerHTML = item
+        ipcRenderer.send('ytdl:link', item)
+    }
+
+
+</script>
+
+</body>
+</html>

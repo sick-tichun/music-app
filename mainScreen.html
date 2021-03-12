@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">    
+    <title>Home</title>
+</head>
+<body>
+    
+    <div id="youtube">
+        <h1>youtoob</h1>
+    </div>
+
+    <div id="spotify">
+        <h1>spotyif</h1>
+    </div>
+
+    <div id="local" onclick="localSelect()">
+        <h1>local</h1>
+    </div>
+
+
+
+
+    <!--donw here div for local playlists-->
+    <div></div>
+
+
+
+
+    <script>
+        const electron = require('electron')
+        const {ipcRenderer} = electron
+    
+        let item
+        function localSelect(){
+            item = "local"
+            sendInput()
+        }
+    
+        function sendInput(){
+            ipcRenderer.send('item:select', item)
+        }
+        
+    </script>
+</body>
+</html>

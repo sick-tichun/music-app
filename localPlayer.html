@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>local</title>
+    <link rel="stylesheet" href="localstyle.css">
+</head>
+<body onload="loadedFunc()">
+    <h1>All songs</h1>
+    <hr>
+    <div id="songCont">
+    </div>
+    <div id="songFile"></div>
+
+    <div id="controls">
+        <br><br>
+        <div id="nowPlayingContainer">
+            <label id="nowPlaying">Now playing: nothing</label>
+        </div>
+        <button onclick="playAudio()" type="button" id="playBtn">▶</button>   
+        <button class="subBtn" onclick="prevAudio()" type="button" id="prevBtn">⇤</button>
+        <button class="subBtn" onclick="nextAudio()" type="button" id="nextBtn">⇥</button>
+        <button class="subBtn" onclick="shuffleAudio()" type="button" id="shuffleBtn">🔀️</button>   
+        <input class="slider" type="range" min="0" max="100" value="20" id="volSlider" onclick="volUpdate()">
+        <input class="slider" type="range" min="0" max="100" value="0" id="seekSlider" onclick="seek()">
+    </div>
+
+
+
+
+    <script>
+        //load libaries and set vars 2 be used in filefetching
+        const electron = require('electron')
+        const {ipcRenderer} = electron
+        let songsvar
+        var songIndex = []
+        
+        //catch the songdata from main.js
+        ipcRenderer.on('songs:songs', function(e, songs){
+            songsvar = songs
+            console.log('songs payload recived from main.js')
+            var song2add = '<ul>'
+            let songpather
+            //for loop to create audio elements
+            songs.forEach(function(songs, index){
+                console.log(songs.filePath, index)
+                songIndex.push(index)
+                song2add += '<li onclick="songSelect('+ index +')">' + songs.songName + '</li>'
+                songpather += '<audio id="' + index + '" onended="songfin()">' + '<source src="' + songs.filePath + '" type="audio/mpeg">' + '</audio>'
+            });
+            document.getElementById('songCont').innerHTML = song2add
+            songpather = songpather.substring(9)
+            document.getElementById('songFile').innerHTML = songpather
+        })
+        
+        //sleep function
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms))
+        }
+         
+        //onload function -- !!!starts before songs are loaded!!!
+        function loadedFunc(){
+        
+        }
+
+        //!song controls
+        //varible settins
+        let shuffle = true
+        let paused = true
+        let currentSong = 0
+        
+        //play button
+        function playAudio() { 
+            if (paused == true){ 
+                document.getElementById(currentSong).play() 
+                paused = false
+                document.getElementById('playBtn').innerHTML = '⏸'
+            }
+            else{
+                document.getElementById(currentSong).pause()
+                paused = true
+                document.getElementById('playBtn').innerHTML = '▶'
+            }
+        } 
+        //pause button
+        ipcRenderer.on('songs:pause', function(e){ // catch pause from bar
+            pauseAudio()
+        })
+        //next track (used when song finished natuarally aswell)
+        function nextAudio(){
+            document.getElementById(currentSong).pause()
+            document.getElementById(currentSong).currentTime = 0
+            if (shuffle === false){
+                currentSong = currentSong + 1
+            }
+            if (shuffle === true){
+                currentSong = Math.floor(Math.random()*(songIndex.length))
+            }
+            document.getElementById(currentSong).play()
+            volUpdate()
+            document.getElementById('nowPlaying').innerHTML = 'Now playing: ' + songsvar[currentSong].songName
+        }
+        ipcRenderer.on('songs:next', function(e){ // catch next from bar
+            nextAudio()
+        })
+        //prev audio --toadd index of songs played so works when shuffled
+        function prevAudio(){
+            document.getElementById(currentSong).pause()
+            document.getElementById(currentSong).currentTime = 0
+            currentSong = currentSong - 1
+            document.getElementById(currentSong).play()
+            volUpdate()
+            document.getElementById('nowPlaying').innerHTML = 'Now playing: ' + songsvar[currentSong].songName
+        }
+        ipcRenderer.on('songs:prev', function(e){ //catch previus from bar
+            prevAudio()
+        })
+        //volume slider
+        document.getElementById(currentSong).volume = 0.2 //default vol value to be changed
+        function volUpdate(){
+            document.getElementById(currentSong).volume = (document.getElementById('volSlider').value)/100
+        }
+        
+        //seeking
+        function seek(){
+            document.getElementById(currentSong).currentTime = (document.getElementById('seekSlider').value/100)*document.getElementById(currentSong).duration
+        }
+        //function to update seek --not working
+        function seekUpdate(){
+            seekbarVal = document.getElementById('seekSlider').value
+            var currentSongTime = document.getElementById(currentSong).currentTime
+            var currentSongLen = document.getElementById(currentSong).duration
+            var songProgress = currentSongTime/currentSongLen
+            seekbarVal = songProgress * 100
+        }
+        //shuffle bool handling
+        function shuffleAudio(){
+            shuffle = !shuffle
+            console.log('ret' + shuffle)
+            if (shuffle===true){
+                document.getElementById('shuffleBtn').style.backgroundColor = 'rgb(203, 75, 22)'
+            }
+            if (shuffle===false){
+                document.getElementById('shuffleBtn').style.backgroundColor = 'rgb(211, 54, 47)'
+            }
+        }
+        //onsongfinish function
+        function songfin(){
+            nextAudio()
+        }
+        //song selection handling
+        function songSelect(i){
+            document.getElementById(currentSong).pause()
+            document.getElementById(currentSong).currentTime = 0
+            currentSong = i
+            document.getElementById(currentSong).play()
+            volUpdate()
+            document.getElementById('nowPlaying').innerHTML = 'Now playing: ' + songsvar[currentSong].songName    
+        }
+
+
+
+
+
+
+        //constantly running loop --currently unsused
+        function appLoop(){
+            loop = true
+            while(loop=true) {
+                
+                seekUpdate()
+                
+                
+                //framerate apploop updates @
+                sleep(33)
+            }
+        }
+
+
+
+    </script>
+</body>
+</html>
